@@ -1,0 +1,14 @@
+for N in 64 256 1024 4096
+	do
+		for i in 0 1 2 3 
+			do
+
+				./fft $N $i 0 > data_${N}_${i}_Q15.txt
+				cat data_${N}_${i}_Q15.txt | sed -ir 's/% .*//' data_${N}_${i}_Q15.txt
+			done
+	done
+
+for i in 0 1 2 3
+	do 
+		paste -d ' ' data_64_${i}_Q15.txt data_256_${i}_Q15.txt data_1024_${i}_Q15.txt data_4096_${i}_Q15.txt > formatted_data_${i}_Q15.txt
+	done

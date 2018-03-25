@@ -1,0 +1,9 @@
+N=1024
+	for i in 0 1 2 3 
+		do
+
+			./fft $N $i 0 > data_round_${i}_Q15.txt
+				cat data_round_${i}_Q15.txt | sed -ir 's/% .*//' data_round_${i}_Q15.txt
+		done
+
+paste -d ' ' data_round_0_Q15.txt data_round_1_Q15.txt data_round_2_Q15.txt data_round_3_Q15.txt > formatted_data_round_Q15.txt
