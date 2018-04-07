@@ -1,20 +1,10 @@
 CC = gcc
 
-CFLAGS = -Wall -mmmx -msse -msse2 -mssse3 -msse4
+CFLAGS = -Wall -mmmx -msse -msse2 -mssse3 -msse4 -mavx2
 
-# Utility routines
-UTIL_OBJS += lab2.o 
 
-#
-
-all: fft
-
-OBJ = $(UTIL_OBJS)
-$(OBJ) : %.o : %.c
-	$(CC) -c $(CFLAGS) -o $@ $<
-
-ffttest: $(OBJ) lab2.o
-	$(CC)  $(OBJ) lab2.o -o lab2
+all: lab2.o fixed_point.o
+	$(CC) lab2.o fixed_point.o -o lab2 -lm
 
 clean:
 	rm -f *.o 

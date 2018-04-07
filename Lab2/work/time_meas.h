@@ -8,6 +8,7 @@ typedef struct {
   long long diff;
   long long max;
   int trials;
+
 } time_stats_t;
 
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline)); //forces the function to be inlined ("inlined functions are as fast as macros")
