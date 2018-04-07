@@ -1,4 +1,3 @@
-// Include files for SSE4
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #include <stdint.h>
@@ -12,11 +11,11 @@
 #include "time_meas.h"
 
 #define NUM_TESTS 1000000
-#define _DEBUGTIME_
+//#define _DEBUGTIME_
 //#define _DEBUGARRAY_
 #define _SSE4_
 //#define _AVX2_
-
+#define _MATLAB_
 
 int16_t FIX_MPY(int16_t x, int16_t y);
 int16_t SAT_ADD16(int16_t x,int16_t y);
@@ -79,66 +78,92 @@ int main(int argc, char* argv[]) {
 
 void run_tests(int16_t *x,int16_t *y,int16_t *z,uint16_t N){
   time_stats_t time_struct;
-  int i;
-  reset_meas(&time_struct);
+  int i, j;
 
-    for(i=1; i<NUM_TESTS; i++){
-    start_meas(&time_struct);
-    componentwise_multiply_real_scalar(x, y, z, N);
-    stop_meas(&time_struct);
+  for(j=0; j<N; j++){
+	  reset_meas(&time_struct);
+
+	  for(i=1; i<NUM_TESTS; i++){
+		start_meas(&time_struct);
+		componentwise_multiply_real_scalar(x, y, z, j);
+		stop_meas(&time_struct);
+	  }
+	  #ifdef _DEBUGARRAY_
+	  for(i=0; i<j; i++){
+		printf("z[%d] : %d\n", i, z[i]);
+	  }
+	  #endif
+
+	  #ifdef _DEBUGTIME_
+	  printf("test : SCALAR	total time : %lld	time average: %lld	N : %d\n", time_struct.diff, time_struct.diff/NUM_TESTS, j);
+	  #endif
+
+	  #ifdef _MATLAB_
+	  printf("%lld %d ", time_struct.diff, j);
+
+	  #if !defined(_SSE4_) & !defined(_AVX2_)
+	  printf("\n");
+	  #endif
+
+	  #endif
+
+	  #ifdef _SSE4_
+	  reset_meas(&time_struct);
+
+	  for(i=0; i<NUM_TESTS; i++){
+		start_meas(&time_struct);
+		componentwise_multiply_real_sse4(x, y, z, j);
+		stop_meas(&time_struct);
+	  }
+	  #ifdef _DEBUGARRAY_
+	  for(i=0; i<j; i++){
+		printf("z[%d] : %d\n", i, z[i]);
+	  }
+	  #endif
+
+	  #ifdef _DEBUGTIME_
+	  printf("test :	SSE4	total time : %lld	time average: %lld	N : %d\n", time_struct.diff, time_struct.diff/NUM_TESTS, j);	
+	  #endif
+		
+	  #ifdef _MATLAB_
+	  printf("%lld %d ", time_struct.diff, j);
+
+	  #ifndef _AVX2_
+	  printf("\n");
+	  #endif
+
+	  #endif
+
+	  #endif
+
+	  #ifdef _AVX2_
+
+	  reset_meas(&time_struct);
+
+	  for(i=0; i<NUM_TESTS; i++){
+		start_meas(&time_struct);
+		componentwise_multiply_real_avx2(x, y, z, j);
+		stop_meas(&time_struct);
+	  }
+
+	  #ifdef _DEBUGPRINT_
+	  for(i=0; i<j; i++){
+		printf("z[%d] : %d\n", i, z[i]);
+	  }
+	  #endif
+
+	  #ifdef _DEBUGTIME_
+	  printf("test : AVX2	total time : %lld	time average: %lld	N : %d\n", time_struct.diff, time_struct.diff/NUM_TESTS, j);
+	  #endif
+
+	  #ifdef _MATLAB_
+	  printf("%lld %d\n", time_struct.diff, j);
+	  #endif
+
+	  #endif
   }
-  #ifdef _DEBUGARRAY_
-  for(i=0; i<N; i++){
-  	printf("z[%d] : %d\n", i, z[i]);
-  }
-  #endif
-
-  #ifdef _DEBUGTIME_
-  printf("total time : %lld	time average: %lld\n", time_struct.diff, time_struct.diff/NUM_TESTS);
-  #endif
-
-  #ifdef _SSE4_
-  reset_meas(&time_struct);
-
-  for(i=0; i<NUM_TESTS; i++){
-    start_meas(&time_struct);
-    componentwise_multiply_real_sse4(x, y, z, N);
-    stop_meas(&time_struct);
-  }
-  #ifdef _DEBUGARRAY_
-  for(i=0; i<N; i++){
-    printf("z[%d] : %d\n", i, z[i]);
-  }
-  #endif
-
-  #ifdef _DEBUGTIME_
-  printf("total time : %lld	time average: %lld\n", time_struct.diff, time_struct.diff/NUM_TESTS);
-  #endif
-
-  #endif
-
-  #ifdef _AVX2_
-
-  reset_meas(&time_struct);
-
-  for(i=0; i<NUM_TESTS; i++){
-    start_meas(&time_struct);
-    componentwise_multiply_real_avx2(x, y, z, N);
-    stop_meas(&time_struct);
-  }
-
-  #ifdef _DEBUGPRINT_
-  for(i=0; i<N; i++){
-    printf("z[%d] : %d\n", i, z[i]);
-  }
-  #endif
-
-  #ifdef _DEBUGTIME_
-  printf("total time : %lld	time average: %lld\n", time_struct.diff, time_struct.diff/NUM_TESTS);
-  #endif
-
-  #endif
 }
+
 
 #ifdef _COMPLEX_
 
