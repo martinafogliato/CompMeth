@@ -1,11 +1,15 @@
 CC = gcc
 
-CFLAGS = -Wall -mmmx -msse -msse2 -mssse3 -msse4 -mavx2
+override CFLAGS += -Wall -mmmx -msse -msse2 -mssse3 -msse4 -mavx2
 
 
-all: lab2.o fixed_point.o
-	$(CC) lab2.o fixed_point.o -o lab2 -lm
+all: lab2.o 
+	$(CC) lab2.o -o lab2 -lm
+
+thread: lab2_thread.o 
+	$(CC) lab2_thread.o -o lab2_thread -lm -lpthread
+
 
 clean:
-	rm -f *.o 
+	rm -f lab2.o 
 

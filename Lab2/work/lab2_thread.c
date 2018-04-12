@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <pthread.h>
 #include "time_meas.h"
 
 #define NUM_TESTS 1000000
@@ -18,6 +19,10 @@
 //#define _AVX512_
 #define _MATLAB_
 
+pthread_t t1;
+uint16_t N;
+
+void * thread_func();
 static inline int16_t FIX_MPY(int16_t x, int16_t y){
 
   return ((int16_t)(((int32_t)x * (int32_t)y)>>15));
@@ -43,59 +48,62 @@ static inline void componentwise_multiply_real_avx2(int16_t *x,int16_t *y,int16_
 static inline void componentwise_multiply_real_avx512(int16_t *x, int16_t *y, int16_t *z, uint16_t N);
 #endif
 
-void run_tests(int16_t *x,int16_t *y,int16_t *z,uint16_t N, uint16_t Nmin);
+void run_tests(int16_t *x,int16_t *y,int16_t *z,uint16_t N);
 
+int main(int argc, char* argv[]){
 
+  if(argc != 2){
+    printf("usage : lab2 <array_length>\n");
+    exit(-1);
+  }
 
-int main(int argc, char* argv[]) {
+  N = atoi(argv[1]);
 
+  pthread_attr_t attr;
+  struct sched_param param;
 
+  pthread_attr_init (&attr);
+  pthread_attr_getschedparam (&attr, &param);
+  param.sched_priority=99;
+  pthread_attr_setschedparam (&attr, &param);
+
+  pthread_create(&t1, &attr, thread_func, NULL);
+  pthread_join(t1, NULL);
+
+  return 0;
+}
+
+void * thread_func(){
+  int16_t * array_x, * array_y, * array_z;
   int i;
-  int16_t * x, * y, * z;
 
 	srand(time(NULL)+getpid());
 
-
-	if(argc != 3){
-		printf("usage : lab2 <array_length_min> <array_length_max>\n");
-		exit(-1);
-	}
-
-
-    uint16_t N = atoi(argv[2]);
-    uint16_t Nmin = atoi(argv[1]);
-
-	x = aligned_alloc(32, (N+32) * sizeof(int16_t));
-	y = aligned_alloc(32, (N+32) * sizeof(int16_t));
-	z = aligned_alloc(32, (N+32) * sizeof(int16_t));
+	array_x = aligned_alloc(32, (N+32) * sizeof(int16_t));
+	array_y = aligned_alloc(32, (N+32) * sizeof(int16_t));
+	array_z = aligned_alloc(32, (N+32) * sizeof(int16_t));
 
 	for (i=0; i<N; i++){
-		x[i]=rand();
-		y[i]=rand();
+		array_x[i]=rand();
+		array_y[i]=rand();
 	}
 
-  #ifdef _DEBUGARRAY_
-	for(i=0; i<N; i++){
-		printf("x[%d] : %d	y[%d] : %d\n", i, x[i], i, y[i]);
-	}
-  #endif
+  run_tests(array_x, array_y, array_z, N);
 
-  run_tests(x, y, z, N, Nmin);
-
-	free(x);
-	free(y);
-	free(z);
+	free(array_x);
+	free(array_y);
+	free(array_z);
 
 	return 0;
 }
 
 
-void run_tests(int16_t * x, int16_t * y, int16_t * z, uint16_t N, uint16_t Nmin){
+void run_tests(int16_t * x, int16_t * y, int16_t * z, uint16_t N){
 
   int i, j;
   time_stats_t time_struct;
 
-  for(j=Nmin; j<N; j++){
+  for(j=0; j<N; j++){
 	  reset_meas(&time_struct);
 
 	  for(i=1; i<NUM_TESTS; i++){
