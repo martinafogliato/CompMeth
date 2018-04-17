@@ -26,7 +26,7 @@ static inline unsigned long long rdtsc_oai(void) {
 static inline unsigned long long rdtsc_oai() __attribute__((always_inline));
 static inline unsigned long long rdtsc_oai() {
   unsigned long long a, d;
-  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d)); //volatile prevents caching, otherwise the compiler is allowed to cache the timestamp while we need a fresh one every time
+  __asm__ volatile ("rdtscp" : "=a" (a), "=d" (d)); //volatile prevents caching, otherwise the compiler is allowed to cache the timestamp while we need a fresh one every time
   //a=low part; d=high part
   //need to force serialization as well? --> rdtscp
  //The Time Stamp Counter (TSC) is a 64s-bit register present on all x86 processors since the Pentium. It counts the number of cycles since reset. The instruction RDTSC returns the TSC in EDX:EAX

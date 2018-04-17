@@ -1,6 +1,6 @@
 CC = gcc
 
-override CFLAGS += -Wall -mmmx -msse -msse2 -mssse3 -msse4 -mavx2
+override CFLAGS += -Wall -mmmx -msse -msse2 -mssse3 -msse4 -mavx2 #-fselective-scheduling -fsel-sched-pipelining -ffast-math -fwhole-program -floop-parallelize-all -funroll-loops -faggressive-loop-optimizations
 
 
 all: lab2.o 

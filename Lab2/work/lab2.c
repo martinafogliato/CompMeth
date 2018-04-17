@@ -10,7 +10,7 @@
 #include <math.h>
 #include "time_meas.h"
 
-#define NUM_TESTS 1000000
+#define NUM_TESTS 10000
 //#define _DEBUGTIME_
 //#define _DEBUGARRAY_
 #define _SSE4_
@@ -18,7 +18,9 @@
 //#define _AVX512_
 #define _MATLAB_
 
-static inline int16_t FIX_MPY(int16_t x, int16_t y){
+int16_t volatile * z;
+
+int16_t FIX_MPY(int16_t x, int16_t y){
 
   return ((int16_t)(((int32_t)x * (int32_t)y)>>15));
 
@@ -29,21 +31,21 @@ inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32);
 inline __m128i cpack(__m128i xre,__m128i xim);
 #endif
 
-static inline void componentwise_multiply_real_scalar(int16_t *x,int16_t *y,int16_t *z,uint16_t N);
+void componentwise_multiply_real_scalar(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N);
 
 #ifdef _SSE4_
-static inline void componentwise_multiply_real_sse4(int16_t *x,int16_t *y,int16_t *z,uint16_t N);
+void componentwise_multiply_real_sse4(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N);
 #endif
 
 #ifdef _AVX2_
-static inline void componentwise_multiply_real_avx2(int16_t *x,int16_t *y,int16_t *z,uint16_t N);
+void componentwise_multiply_real_avx2(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N);
 #endif
 
 #ifdef _AVX512_
-static inline void componentwise_multiply_real_avx512(int16_t *x, int16_t *y, int16_t *z, uint16_t N);
+void componentwise_multiply_real_avx512(int16_t *x, int16_t *y, int16_t *z, uint16_t N);
 #endif
 
-void run_tests(int16_t *x,int16_t *y,int16_t *z,uint16_t N, uint16_t Nmin);
+void run_tests(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N, uint16_t Nmin);
 
 
 
@@ -51,7 +53,7 @@ int main(int argc, char* argv[]) {
 
 
   int i;
-  int16_t * x, * y, * z;
+  int16_t * x, * y;
 
 	srand(time(NULL)+getpid());
 
@@ -90,7 +92,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-void run_tests(int16_t * x, int16_t * y, int16_t * z, uint16_t N, uint16_t Nmin){
+void run_tests(int16_t * x, int16_t * y, int16_t volatile * z, uint16_t N, uint16_t Nmin){
 
   int i, j;
   time_stats_t time_struct;
@@ -238,7 +240,7 @@ inline __m128i cpack(__m128i xre,__m128i xim) {
 #endif
 
 
-void componentwise_multiply_real_scalar(int16_t *x,int16_t *y,int16_t *z,uint16_t N) {
+void componentwise_multiply_real_scalar(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N) {
 	int i;
 
 	for(i=0; i<N; i++){
@@ -248,7 +250,7 @@ void componentwise_multiply_real_scalar(int16_t *x,int16_t *y,int16_t *z,uint16_
 }
 
 #ifdef _SSE4_
-void componentwise_multiply_real_sse4(int16_t *x,int16_t *y,int16_t *z,uint16_t N) {
+void componentwise_multiply_real_sse4(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N) {
 
 	__m128i *x128 = (__m128i *)x;
 	__m128i *y128 = (__m128i *)y;
@@ -263,7 +265,7 @@ void componentwise_multiply_real_sse4(int16_t *x,int16_t *y,int16_t *z,uint16_t 
 #endif
 
 #ifdef _AVX2_
-void componentwise_multiply_real_avx2(int16_t *x,int16_t *y,int16_t *z, uint16_t N) {
+void componentwise_multiply_real_avx2(int16_t *x,int16_t *y,int16_t volatile *z, uint16_t N) {
 
 	__m256i *x256 = (__m256i *)x;
 	__m256i *y256 = (__m256i *)y;
