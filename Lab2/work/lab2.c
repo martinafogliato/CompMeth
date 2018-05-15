@@ -13,14 +13,13 @@
 #define NUM_TESTS 10000
 //#define _DEBUGTIME_
 //#define _DEBUGARRAY_
-//#define _SSE4_
-//#define _AVX2_
+#define _SSE4_
+#define _AVX2_
 //#define _AVX512_
-//#define _MATLAB_
-#define _COMPLEX_
+#define _MATLAB_
+//#define _COMPLEX_
 
 int16_t volatile * z;
-const static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
 
 void print128_num(__m128i var);
 
@@ -31,9 +30,17 @@ void print128_num(__m128i var);
 
 }
 
-int16_t SAT_ADD16(int16_t x,int16_t y);
+int16_t SAT_ADD16(int16_t x,int16_t y) {
+  if ((int32_t)x + (int32_t)y > 32767)
+    return(32767);
+  else if ((int32_t)x + (int32_t)y < -32767)
+    return(-32768);
+  else
+    return(x+y);
+}
 
 #ifndef _COMPLEX_
+
   void run_tests(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N, uint16_t Nmin);
   void componentwise_multiply_real_scalar(int16_t *x,int16_t *y,int16_t volatile *z,uint16_t N);
   #ifdef _SSE4_
@@ -49,6 +56,7 @@ int16_t SAT_ADD16(int16_t x,int16_t y);
   #endif
 
 #else
+  const static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
   void run_complex_tests(int16_t * x, int16_t * y, int16_t volatile * z, uint16_t N, uint16_t Nmin);
   void componentwise_multiply_complex_scalar(int16_t *x, int16_t *y, int16_t volatile *z, uint16_t N);
   void componentwise_multiply_complex_sse4(int16_t *x, int16_t *y, int16_t volatile *z, uint16_t N);
@@ -68,7 +76,6 @@ int main(int argc, char* argv[]) {
 
 	srand(time(NULL)+getpid());
 
-
 	if(argc != 3){
 		printf("usage : lab2 <array_length_min> <array_length_max>\n");
 		exit(-1);
@@ -76,11 +83,12 @@ int main(int argc, char* argv[]) {
 
     uint16_t N = atoi(argv[2]);
     uint16_t Nmin = atoi(argv[1]);
-
+/*
   if((N-Nmin)%2!=0) {
     printf("Number of elements in the array must be even.\n");
     exit(-1);
   }
+*/
 
 	x = aligned_alloc(32, (N+32) * sizeof(int16_t));
 	y = aligned_alloc(32, (N+32) * sizeof(int16_t));
@@ -359,9 +367,9 @@ void componentwise_multiply_complex_scalar(int16_t *x,int16_t *y,int16_t volatil
  for(i=0; i<N; i+=2){
 
    z[i] = FIX_MPY(x[i], y[i]);
-   z[i] += FIX_MPY(x[i+1], -y[i+1]);
+   z[i] = SAT_ADD16(FIX_MPY(x[i+1], -y[i+1]), z[i]);
    z[i+1] = FIX_MPY(x[i+1], y[i]);
-   z[i+1] += FIX_MPY(x[i], y[i+1]);
+   z[i+1] SAT_ADD16(FIX_MPY(x[i], y[i+1]), z[i]);
 
  }
 }
@@ -374,7 +382,7 @@ void componentwise_multiply_complex_sse4(int16_t *x,int16_t *y,int16_t volatile 
  int i;
  __m128i z128_im, z128_tmp_lo, z128_tmp_hi;
 
- for(i=0; i<ceil(N/8.0); i+=2){
+ for(i=0; i<ceil(N/8.0); i++){
      //real part
    z128[i] = _mm_madd_epi16(x128[i], _mm_sign_epi16(y128[i], *(__m128i *)reflip)); //invert signs of y according to reflip, then multiply and add
 
